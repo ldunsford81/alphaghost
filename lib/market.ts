@@ -214,6 +214,22 @@ export async function getSnapshot(): Promise<Snapshot> {
     errors.push(`prices: ${err instanceof Error ? err.message : "failed"}`);
   }
 
+  const filledFromCache: string[] = [];
+  if (lastGoodSnapshot) {
+    for (const id of ["BTC", "ETH", "XRP", "SOL", "HYPE"] as AssetId[]) {
+      if (prices[id] == null && lastGoodSnapshot.prices[id] != null) {
+        prices[id] = lastGoodSnapshot.prices[id];
+        filledFromCache.push(id);
+      }
+    }
+    if (filledFromCache.length) {
+      source =
+        source === "none"
+          ? `last good (${filledFromCache.join(", ")})`
+          : `${source} + last good ${filledFromCache.join(", ")}`;
+    }
+  }
+
   try {
     fearGreed = await loadFearGreed();
     if (fearGreed) fngSource = "alternative.me";

@@ -16,6 +16,8 @@ import type { Candle } from "@/lib/types";
 
 type LineSpec = { price: number; title: string; color: string; style: LineStyle };
 
+const VISIBLE_BARS = 160;
+
 export function BtcChart({
   candles,
   showScenarios,
@@ -51,7 +53,7 @@ export function BtcChart({
       },
       rightPriceScale: {
         borderColor: "#1a2026",
-        scaleMargins: { top: 0.08, bottom: 0.06 },
+        scaleMargins: { top: 0.1, bottom: 0.08 },
       },
       timeScale: {
         borderColor: "#1a2026",
@@ -78,7 +80,8 @@ export function BtcChart({
 
   useEffect(() => {
     const series = seriesRef.current;
-    if (!series || candles.length === 0) return;
+    const chart = chartRef.current;
+    if (!series || !chart || candles.length === 0) return;
     series.setData(
       candles.map((c) => ({
         time: c.time as UTCTimestamp,
@@ -88,7 +91,11 @@ export function BtcChart({
         close: c.close,
       })),
     );
-    chartRef.current?.timeScale().fitContent();
+    const from = Math.max(0, candles.length - VISIBLE_BARS);
+    chart.timeScale().setVisibleLogicalRange({
+      from,
+      to: candles.length + 2,
+    });
   }, [candles]);
 
   useEffect(() => {
@@ -114,9 +121,9 @@ export function BtcChart({
     ];
     if (showScenarios) {
       specs.push(
-        { price: 74041, title: "−10%", color: "#3d9b8f", style: LineStyle.SparseDotted },
-        { price: 65814, title: "−20%", color: "#8a7018", style: LineStyle.SparseDotted },
-        { price: 57588, title: "−30%", color: "#c45c5c", style: LineStyle.SparseDotted },
+        { price: 74041, title: "−10", color: "#3d9b8f", style: LineStyle.SparseDotted },
+        { price: 65814, title: "−20", color: "#8a7018", style: LineStyle.SparseDotted },
+        { price: 57588, title: "−30", color: "#c45c5c", style: LineStyle.SparseDotted },
       );
     }
 
@@ -131,23 +138,24 @@ export function BtcChart({
       }),
     );
 
-    const lows = specs.map((s) => s.price);
-    const highs = specs.map((s) => s.price);
+    const linePrices = specs.map((s) => s.price);
+    const recent = candles.slice(-VISIBLE_BARS);
     series.applyOptions({
-      autoscaleInfoProvider: (
-        original: () => { priceRange: { minValue: number; maxValue: number } } | null,
-      ) => {
-        const base = original();
-        if (!base) return base;
+      autoscaleInfoProvider: () => {
+        const highs = recent.map((c) => c.high);
+        const lows = recent.map((c) => c.low);
+        const hi = Math.max(...highs, ...linePrices);
+        const lo = Math.min(...lows, ...linePrices);
+        const pad = Math.max((hi - lo) * 0.08, 800);
         return {
           priceRange: {
-            minValue: Math.min(base.priceRange.minValue, ...lows),
-            maxValue: Math.max(base.priceRange.maxValue, ...highs),
+            minValue: lo - pad,
+            maxValue: hi + pad,
           },
         };
       },
     });
-  }, [showScenarios, candles.length]);
+  }, [showScenarios, candles]);
 
-  return <div ref={host} className="h-[380px] w-full" />;
+  return <div ref={host} className="h-[400px] w-full overflow-hidden" />;
 }
