@@ -78,7 +78,7 @@ The researcher’s **15m “Alt entry level alerts”** routine is the writer. T
 2. Repo sample (committed): `data/alt-entry-alerts-state.json`
 3. Optional override: `ALERTS_STATE_PATH`
 
-`GET /api/alerts` tries those paths in order. Hit = mark **at or below** the adopted tranche. Keys look like `ETH:T1`. `fired[]` stays empty until the routine records a hit. The Alerts page also shows a derived “live hits” list from current marks — display only, not written back.
+`GET /api/alerts` tries those paths in order. The 15m routine **updates the live copy**; until that file exists the UI serves the committed sample. Hit = mark **at or below** the adopted tranche in `lib/entry-config.ts` (no formula refresh). Keys look like `ETH:T1`. `fired[]` stays empty until the routine records a hit. The Alerts page also shows a derived “live hits” list from current marks — display only, not written back. `last_prices` / `last_source` / `consecutive_fetch_failures` are shown when present.
 
 State shape:
 

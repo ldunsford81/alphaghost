@@ -1,3 +1,13 @@
+/**
+ * Read-only alerts state.
+ *
+ * Writer: researcher 15m “Alt entry level alerts” routine.
+ * Canonical live file: /workspace/alt-entry-alerts-state.json
+ * Repo sample:         data/alt-entry-alerts-state.json
+ *
+ * Hit = mark at or below the adopted T1–T4 in lib/entry-config.ts.
+ * Keys look like "ETH:T1". This module never writes fired[].
+ */
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { entryCoins, type AssetId } from "./entry-config";
@@ -54,7 +64,7 @@ function parseState(raw: unknown): AlertsState {
   const last_prices: AlertsState["last_prices"] = {};
   for (const id of ["BTC", "ETH", "XRP", "SOL", "HYPE"] as AssetId[]) {
     const n = Number(prices[id]);
-    if (Number.isFinite(n) && n > 0) last_prices[id] = n;
+    if (Number.isFinite(n)) last_prices[id] = n;
   }
   return {
     fired: Array.isArray(o.fired) ? o.fired.map(String) : [],

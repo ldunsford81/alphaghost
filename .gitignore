@@ -43,3 +43,6 @@ next-env.d.ts
 # next dev agent stubs
 AGENTS.md
 CLAUDE.md
+
+# live 15m alerts state (writer: researcher routine; sample is data/alt-entry-alerts-state.json)
+/alt-entry-alerts-state.json
