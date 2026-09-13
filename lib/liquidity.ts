@@ -85,14 +85,22 @@ async function loadStables(): Promise<LiquidityPayload["stables"]> {
   };
 
   const want = new Set(["USDT", "USDC", "USDe", "DAI", "USDS"]);
-  const top = (assets.peggedAssets ?? [])
-    .map((a) => ({
-      symbol: a.symbol ?? "",
-      name: a.name ?? "",
-      circulatingUsd: n(a.circulating?.peggedUSD) ?? 0,
-    }))
-    .filter((a) => want.has(a.symbol) && a.circulatingUsd > 0)
-    .sort((a, b) => b.circulatingUsd - a.circulatingUsd);
+  const best = new Map<string, StableAsset>();
+  for (const a of assets.peggedAssets ?? []) {
+    const symbol = a.symbol ?? "";
+    if (!want.has(symbol)) continue;
+    const circulatingUsd = n(a.circulating?.peggedUSD) ?? 0;
+    if (circulatingUsd <= 0) continue;
+    const prev = best.get(symbol);
+    if (!prev || circulatingUsd > prev.circulatingUsd) {
+      best.set(symbol, {
+        symbol,
+        name: a.name ?? "",
+        circulatingUsd,
+      });
+    }
+  }
+  const top = [...best.values()].sort((a, b) => b.circulatingUsd - a.circulatingUsd);
 
   return {
     totalUsd: last?.usd ?? null,
