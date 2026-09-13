@@ -1,0 +1,14 @@
+{
+  "fired": [],
+  "note": "keys like ETH:T1 — empty until first hit. Hit = mark at or below the adopted tranche in lib/entry-config.ts. Writer: researcher 15m “Alt entry level alerts” routine.",
+  "last_check": "2026-09-13T08:00:00.000Z",
+  "last_prices": {
+    "BTC": 76832.5,
+    "ETH": 2495.45,
+    "XRP": 1.34775,
+    "SOL": 100.035,
+    "HYPE": 77.7995
+  },
+  "last_source": "hyperliquid_allMids",
+  "consecutive_fetch_failures": 0
+}
