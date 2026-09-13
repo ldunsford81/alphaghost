@@ -7,12 +7,21 @@ import { clockUtc } from "@/lib/format";
 import { useEffect, useState } from "react";
 
 function Clock() {
-  const [now, setNow] = useState(() => clockUtc());
+  const [now, setNow] = useState<string | null>(null);
   useEffect(() => {
-    const id = setInterval(() => setNow(clockUtc()), 1000);
+    const tick = () => setNow(clockUtc());
+    tick();
+    const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, []);
-  return <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-mute">{now}</span>;
+  return (
+    <span
+      className="font-mono text-[10px] uppercase tracking-[0.14em] text-mute"
+      suppressHydrationWarning
+    >
+      {now ?? "—"}
+    </span>
+  );
 }
 
 function ShellInner({ children }: { children: React.ReactNode }) {
