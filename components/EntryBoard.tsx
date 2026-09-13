@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { RESEARCH_AS_OF, btcCycle, entryCoins } from "@/lib/entry-config";
 import { num, pct, usd } from "@/lib/format";
 import { LEVEL_META, distancePct, nextLevel, zoneForPrice } from "@/lib/levels";
@@ -145,10 +146,12 @@ export function EntryBoard() {
             15m T1–T4 routine
           </div>
           <p className="mt-2 text-[12px] leading-relaxed text-dim">
-            Alerts are not wired in v1. The researcher&apos;s 15-minute check is:
-            mark vs T1–T4 on this blotter, then size only if BTC is tagging the
-            200W regime. This page is the watchlist — it does not fire orders or
-            notifications yet.
+            The researcher&apos;s 15-minute check still owns fired keys. This blotter
+            is the watchlist; the read-only hook lives on{" "}
+            <Link href="/alerts" className="text-teal hover:underline">
+              /alerts
+            </Link>
+            . No notifications and no order routing.
           </p>
         </div>
       </div>

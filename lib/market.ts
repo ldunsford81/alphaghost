@@ -5,6 +5,7 @@ import {
   krakenBtcPair,
   type AssetId,
 } from "./entry-config";
+import { fetchJson } from "./http";
 import type { Candle, CandleResponse, FearGreed, Prices, Snapshot } from "./types";
 
 const HL_INFO = "https://api.hyperliquid.xyz/info";
@@ -19,26 +20,6 @@ let snapshotCache: Cache<Snapshot> = null;
 let lastGoodSnapshot: Snapshot | null = null;
 let candleCache: Cache<CandleResponse> = null;
 let lastGoodCandles: CandleResponse | null = null;
-
-async function fetchJson<T>(
-  url: string,
-  init: RequestInit & { timeoutMs?: number } = {},
-): Promise<T> {
-  const { timeoutMs = 8000, ...rest } = init;
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-  try {
-    const res = await fetch(url, {
-      ...rest,
-      cache: "no-store",
-      signal: ctrl.signal,
-    });
-    if (!res.ok) throw new Error(`${url} → ${res.status}`);
-    return (await res.json()) as T;
-  } finally {
-    clearTimeout(timer);
-  }
-}
 
 function readCache<T>(cache: Cache<T>, ttl = CACHE_TTL_MS): T | null {
   if (!cache) return null;
@@ -180,18 +161,28 @@ async function loadPrices(): Promise<{ prices: Prices; source: string; errors: s
   return { prices, source, errors };
 }
 
-async function loadFearGreed(): Promise<FearGreed | null> {
+async function loadFearGreed(): Promise<{
+  latest: FearGreed;
+  history: FearGreed[];
+} | null> {
   const data = await fetchJson<{
     data?: { value: string; value_classification: string; timestamp: string }[];
   }>(FNG);
-  const row = data.data?.[0];
-  if (!row) return null;
-  const value = Number(row.value);
-  if (!Number.isFinite(value)) return null;
+  const rows = (data.data ?? [])
+    .map((row) => {
+      const value = Number(row.value);
+      if (!Number.isFinite(value)) return null;
+      return {
+        value,
+        classification: row.value_classification,
+        timestamp: new Date(Number(row.timestamp) * 1000).toISOString(),
+      };
+    })
+    .filter((r): r is FearGreed => r != null);
+  if (rows.length === 0) return null;
   return {
-    value,
-    classification: row.value_classification,
-    timestamp: new Date(Number(row.timestamp) * 1000).toISOString(),
+    latest: rows[0],
+    history: [...rows].reverse(),
   };
 }
 
@@ -203,6 +194,7 @@ export async function getSnapshot(): Promise<Snapshot> {
   let prices: Prices = {};
   let source = "none";
   let fearGreed: FearGreed | null = null;
+  let fearGreedHistory: FearGreed[] = [];
   let fngSource: string | null = null;
 
   try {
@@ -231,8 +223,12 @@ export async function getSnapshot(): Promise<Snapshot> {
   }
 
   try {
-    fearGreed = await loadFearGreed();
-    if (fearGreed) fngSource = "alternative.me";
+    const fng = await loadFearGreed();
+    if (fng) {
+      fearGreed = fng.latest;
+      fearGreedHistory = fng.history;
+      fngSource = "alternative.me";
+    }
   } catch (err) {
     errors.push(`fear&greed: ${err instanceof Error ? err.message : "failed"}`);
   }
@@ -256,6 +252,7 @@ export async function getSnapshot(): Promise<Snapshot> {
     errors,
     prices,
     fearGreed,
+    fearGreedHistory,
   };
   snapshotCache = { at: Date.now(), data: snap };
   if (snap.ok) lastGoodSnapshot = snap;

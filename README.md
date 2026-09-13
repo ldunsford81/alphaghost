@@ -1,10 +1,10 @@
 # alphaghost
 
-Leigh’s personal Coiner-style **research terminal** (Milestone 1).
+Leigh’s personal Coiner-style **research terminal** (Milestone 2).
 
-Not an exchange, not The Coiners Pro/community/OTC. No auth, no wallet connect, no order execution. Dark desktop blotter for BTC cycle context and the adopted ETH / XRP / SOL / HYPE T1–T4 entry plan.
+Not an exchange, not The Coiners Pro/community/OTC. No auth, no wallet connect, no order execution. Dark desktop blotter for BTC cycle context, the adopted ETH / XRP / SOL / HYPE T1–T4 entry plan, structure / liquidity / sentiment, and a read-only 15m alerts hook.
 
-Inspired by the *shape* of [thecoiners.io](https://thecoiners.io/) — a single place to read cycle, levels, and later structure / sentiment / liquidity — not a clone of their product.
+Inspired by the *shape* of [thecoiners.io](https://thecoiners.io/) — a single place to read cycle, levels, structure, sentiment, and liquidity — not a clone of their product.
 
 ## Run
 
@@ -26,11 +26,12 @@ No `.env`, no API keys, no paid vendors.
 
 | Route | Status |
 | --- | --- |
-| `/` BTC Cycle / 200W | **Live** — spot vs adopted 200W MA, swing drawdown, daily chart + scenario lines |
-| `/entry` Entry Levels | **Live** — ETH / XRP / SOL / HYPE T1–T4, distance, status badges |
-| `/structure` | Skeleton (same chrome) |
-| `/sentiment` | Fear & Greed live; rest is skeleton |
-| `/liquidity` | Skeleton (ETF / stables later) |
+| `/` BTC Cycle / 200W | Live — spot vs adopted 200W MA, swing drawdown, daily chart + scenario lines |
+| `/entry` Entry Levels | Live — ETH / XRP / SOL / HYPE T1–T4, distance, status badges |
+| `/structure` | Live — BTC.D / majors vs rest (CoinGecko), regime stub from 200W + swing, HL funding/OI for BTC+HYPE |
+| `/sentiment` | Live Fear & Greed + 30d sparkline + meaning band |
+| `/liquidity` | Live USD-pegged stables (DefiLlama). ETF flows = honest manual/later |
+| `/alerts` | Read-only 15m T1–T4 hook (`fired`, `last_check`, `last_prices`) |
 
 Footer on every page: research terminal only — not financial advice, does not execute trades.
 
@@ -69,6 +70,31 @@ As of **2026-09-12**:
 
 BTC 200W MA **65268**. Swing high **82268** (2026-09-03). Scenario: −10% **74041** · −20% **65814** · −30% **57588**.
 
+## Alerts hook (read-only)
+
+The researcher’s **15m “Alt entry level alerts”** routine is the writer. This app only reads.
+
+1. Canonical live file on the shared box: `/workspace/alt-entry-alerts-state.json`
+2. Repo sample (committed): `data/alt-entry-alerts-state.json`
+3. Optional override: `ALERTS_STATE_PATH`
+
+`GET /api/alerts` tries those paths in order. Hit = mark **at or below** the adopted tranche. Keys look like `ETH:T1`. `fired[]` stays empty until the routine records a hit. The Alerts page also shows a derived “live hits” list from current marks — display only, not written back.
+
+State shape:
+
+```json
+{
+  "fired": [],
+  "note": "keys like ETH:T1 — empty until first hit",
+  "last_check": "ISO timestamp",
+  "last_prices": { "BTC": 0, "ETH": 0, "XRP": 0, "SOL": 0, "HYPE": 0 },
+  "last_source": "hyperliquid_allMids",
+  "consecutive_fetch_failures": 0
+}
+```
+
+No push notifications in this milestone.
+
 ## Data sources (free / public)
 
 Marks refresh about every 20s via `/api/snapshot`. Each live panel shows **source + last refresh**. If a feed dies, the last good snapshot is served and labelled stale.
@@ -85,16 +111,22 @@ Marks refresh about every 20s via `/api/snapshot`. Each live panel shows **sourc
 2. Coinbase daily OHLC
 3. Kraken `OHLC` `XBTUSD` interval 1440
 
+**Structure**
+
+- [CoinGecko global](https://api.coingecko.com/api/v3/global) — `market_cap_percentage` (BTC.D, ETH, SOL, XRP, USDT, USDC)
+- Hyperliquid `metaAndAssetCtxs` — BTC + HYPE hourly funding and OI (shown unavailable if the call fails; never faked)
+
+**Liquidity**
+
+- [DefiLlama stablecoins](https://stablecoins.llama.fi/stablecoincharts/all) — USD-pegged circulating + 1d/7d/30d change
+- ETF flows: **not wired** — no reliable free public API
+
 **Sentiment**
 
-- [alternative.me Fear & Greed](https://api.alternative.me/fng/)
+- [alternative.me Fear & Greed](https://api.alternative.me/fng/?limit=30) — latest + 30 daily prints
 
 The 200W MA on the cycle panel is the **adopted research print** in `entry-config.ts`, not a live SMA rebuild. Candle overlays use that same print plus the swing / scenario lines.
 
 ## Stack
 
 Next.js App Router, TypeScript, Tailwind CSS v4, [lightweight-charts](https://github.com/tradingview/lightweight-charts).
-
-## Later (not this PR)
-
-Market structure map, richer sentiment, ETF / stablecoin liquidity, and alerts hooked to the researcher’s 15m T1–T4 routine. The entry blotter already states that alerts are watchlist-only in v1.

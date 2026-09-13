@@ -28,6 +28,7 @@ export type Snapshot = {
   errors: string[];
   prices: Prices;
   fearGreed: FearGreed | null;
+  fearGreedHistory: FearGreed[];
 };
 
 export type CandleResponse = {

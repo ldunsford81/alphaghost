@@ -29,7 +29,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
               Leigh · personal research
             </span>
             <span className="rounded-sm border border-line-strong px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.16em] text-dim">
-              M1
+              M2
             </span>
           </div>
           <div className="flex items-center gap-4">
